@@ -19,9 +19,9 @@ module alu_fsm #(
         A_UPPER,
         B_LOWER,
         B_UPPER,
-        //ALUFN_SELECT,
-        DISPLAY_UPPER
-        //DISPLAY_LOWER
+        ALUFN_SELECT,
+        DISPLAY_UPPER,
+        DISPLAY_LOWER
     }
     
     sig rst;
@@ -37,7 +37,7 @@ module alu_fsm #(
             dff state[$width(States)](#INIT(States.INIT));
             dff a_reg[32];
             dff b_reg[32];
-            //dff alufn_reg[6];
+            dff alufn_reg[6];
         }
         
     }
@@ -68,82 +68,86 @@ module alu_fsm #(
         a_reg.d = a_reg.q;
         b_reg.d = b_reg.q;
 
+        /* --------------- Description of what each state does --------------- */
+        
         case (state.q) {
             
+            
             States.INIT:
+            led[7] = 1b1
             if (io_button_edge.out[1]) {
             state.d = States.A_LOWER;
             }
-        
-            else if (io_button_edge.out[0]) {
+            
+            
+            States.A_LOWER: /* store lower 16 bits of a */
+            led[6] = 1b1;
+            if (io_button_edge.out[1]) {
+            a_reg.d[7:0] = io_dip[0];
+            a_reg.d[15:8] = io_dip[1];
             state.d = States.A_UPPER;
             }
+           
             
-            else if (io_button_edge.out[3]) {
+            States.A_UPPER: /* store upper 16bits of a */
+            led[5] = 1b1;
+            if (io_button_edge.out[1]) {
+            a_reg.d[23:16] = io_dip[0];
+            a_reg.d[31:24] = io_dip[1];
             state.d = States.B_LOWER;
             }
-           
-            else if (io_button_edge.out[2]) {
-            state.d = States.B_UPPER
+            
+            
+            States.B_LOWER: /* store lower 16bits of b */
+            led[4] = 1b1;
+            if (io_button_edge.out[1]) {
+            b_reg.d[7:0] = io_dip[0];
+            b_reg.d[15:8] = io_dip[1];
+            state.d = States.B_UPPER;
             }
             
-            /*if (io_button_edge.out[4]) {
-            state.d = States.ALUFN_SELECT;
-            } */
             
-            else if (io_button_edge.out[4]) {
+            States.B_UPPER: /* store upper 16bits of b */
+            led[3] = 1b1;
+            if (io_button_edge.out[1]) {
+            b_reg.d[23:16] = io_dip[0];
+            b_reg.d[31:24] = io_dip[1];
+            state.d = States.ALUFN_SELECT;
+            }
+            
+            
+            States.ALUFN_SELECT: /* select which operation to perform */
+            led[2] = 1b1;
+            if (io_button_edge.out[1]) {
+            alufn_reg.d = io_dip[2][5:0];
             state.d = States.DISPLAY_UPPER;
             }
             
-            /*if (io_button_edge.out[3]) {
-            state.d = States.DISPLAY_LOWER;
-            }*/
-   
-            
-            /* --------------- Description of what each state does --------------- */
-            
-            States.A_LOWER: /* store lower 16 bits of a */
-            a_reg.d[7:0] = io_dip[0];
-            a_reg.d[15:8] = io_dip[1];
-            state.d = States.INIT;
-            
-            States.A_UPPER: /* store upper 16bits of a */
-            a_reg.d[23:16] = io_dip[0];
-            a_reg.d[31:24] = io_dip[1];
-            state.d = States.INIT;
-            
-            States.B_LOWER: /* store lower 16bits of b */
-            b_reg.d[7:0] = io_dip[0];
-            b_reg.d[15:8] = io_dip[1];
-            state.d = States.INIT;
-            
-            States.B_UPPER: /* store upper 16bits of b */
-            b_reg.d[23:16] = io_dip[0];
-            b_reg.d[31:24] = io_dip[1];
-            state.d = States.INIT;
-            
-            
-            //States.ALUFN_SELECT: /* select which operation to perform */
-            //alufn_reg.d = io_dip[2][5:0];
-            //state.d = States.INIT;
-           
             
             States.DISPLAY_UPPER: /* display upper 16bits of output */
+            led[1] = 1b1;
             alu_unit.a = a_reg.q;
             alu_unit.b = b_reg.q;
-            alu_unit.alufn = io_dip[2][5:0];
-            io_led[2] = alu_unit.alu_output[31:24];
-            io_led[1] = alu_unit.alu_output[23:16];
-            io_led[0] = alu_unit.alu_output[15:8];
-            led[7:0] = alu_unit.alu_output[7:0];
-            state.d = States.INIT;
+            alu_unit.alufn = alufn_reg.q;
+            io_led[1] = alu_unit.alu_output[31:24];
+            io_led[0] = alu_unit.alu_output[23:16];
+            if (io_button_edge.out[1]) {
+            state.d = States.DISPLAY_LOWER;
+            }
             
-            /*States.DISPLAY_LOWER:
+            
+            States.DISPLAY_LOWER: /* display lower 16bits of output */
+            led[0] = 1b1;
+            alu_unit.a = a_reg.q;
+            alu_unit.b = b_reg.q;
+            alu_unit.alufn = alufn_reg.q;
             io_led[1] = alu_unit.alu_output[15:8];
             io_led[0] = alu_unit.alu_output[7:0];
             led[7:5] = c{alu_unit.z, alu_unit.v, alu_unit.n};
-            state.d = States.INIT;*/
-                
+            if (io_button_edge.out[1]){
+            state.d = States.INIT;
+            }
+            
             
         }
     }
