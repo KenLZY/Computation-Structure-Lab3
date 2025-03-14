@@ -1,0 +1,23 @@
+module boolean #(
+    SIZE ~ 32 : SIZE > 0
+)(
+    input a[SIZE],
+    input b[SIZE],
+    input alufn[6],
+    output bool[SIZE]
+) {
+    
+    mux_4 mux_4_8[SIZE];
+    
+    always { // implement boolean unit logic here
+        
+        bool = 0;
+        mux_4_8.in = SIZEx{{alufn[3:0]}};
+        mux_4_8.s0 = a;
+        mux_4_8.s1 = b;
+        
+        bool = mux_4_8.out;
+        
+    }
+    
+}

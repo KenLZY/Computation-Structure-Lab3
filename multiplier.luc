@@ -1,0 +1,65 @@
+/*module multiplier (
+    input clk,
+    input rst_n,
+    input a[4],
+    input b[4],
+    output mul[4]
+) {
+    dff result_reg[4](.clk(clk), .rst(rst_n));
+    dff multiplicand_reg[4](.clk(clk), .rst(rst_n));
+    dff multiplier_reg[4](.clk(clk), .rst(rst_n));
+    dff count_reg[3](.clk(clk), .rst(rst_n));
+    
+    //sig result[4];
+    //sig multiplicand[4];
+    //sig multiplier[4];
+    sig temp_sum[4];
+    sig shift_amount[5];
+    
+    adder adder(#SIZE(4));
+    shifter shifter(#SIZE(4));
+    
+    always {
+        shift_amount = 1b00001;
+        adder.a = 0;
+        adder.b = 0;
+        adder.alufn_signal = 0;
+        temp_sum = 0;
+        shifter.a = 0;
+        shifter.b = 0;
+        shifter.alufn = 0;
+        
+        if (!rst_n) {
+            result_reg.d = 0;
+            multiplicand_reg.d = a;
+            multiplier_reg.d = b;
+            count_reg.d = 0
+        }
+        
+        else if (count_reg.q < 4) {
+            if (multiplier_reg.q[0]) {
+                adder.a = result_reg.q;
+                adder.b = multiplicand_reg.q;
+                adder.alufn_signal = 6b000000;
+                temp_sum = adder.out;
+                result_reg.d = temp_sum;
+            }
+            
+            shifter.a = multiplicand_reg.q;
+            shifter.b = shift_amount;
+            shifter.alufn = 6b000000;
+            multiplicand_reg.d = shifter.result;
+            
+            shifter.a = multiplier_reg.q;
+            shifter.b = shift_amount;
+            shifter.alufn = 6b000001;
+            multiplier_reg.d = shifter.result;
+            
+            count_reg.d = count_reg.q + 1;
+            
+        }
+        
+        mul = result_reg.q;
+        
+    }
+}*/

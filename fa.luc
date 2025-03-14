@@ -1,0 +1,20 @@
+// A full adder combinational logic unit 
+module fa (
+    input a,
+    input b,
+    input cin,
+    output s,
+    output cout
+) {
+    
+    always {
+        // implement 1-bit full adder logic here
+        
+        // s = A x B x C
+        // cout = cin ( A + B ) + AB
+        s = a ^ b ^ cin
+        cout = ( a & b ) | cin & ( a | b )
+        
+    }
+    
+}

@@ -1,0 +1,59 @@
+module shifter #(
+
+    SIZE ~ 32 : SIZE > 0 & SIZE < 32
+    
+)(
+    input a[SIZE],
+    input b[5], /* determines how much to shift by */
+    input alufn[6], /* determines which type of shift to execute */
+    output result[SIZE]
+) {
+    
+    sig rev_a[SIZE];
+    sig rev_shifted[SIZE];
+    sig shifted[SIZE];
+    sig final_shift[SIZE];
+    sig pad;
+    
+    bit_reverse rev_input(#SIZE(SIZE));
+    
+    mux_2 inp_mux(#SIZE(SIZE));
+    
+    mux_2 pad_mux(#SIZE(1));
+    
+    x_bit_left_shifter shifter(#SHIFT(SIZE));
+    
+    bit_reverse rev_output(#SIZE(SIZE));
+    
+    mux_2 out_mux(#SIZE(SIZE));
+    
+    always {
+        
+        rev_input.in = a;
+        rev_a = rev_input.reversed
+        
+        inp_mux.s0 = alufn[0];
+        inp_mux.inp1 = a;
+        inp_mux.inp2 = rev_a;
+        shifted = inp_mux.out;
+        
+        pad_mux.s0 = alufn[1];
+        pad_mux.inp1 = 1b0;
+        pad_mux.inp2 = a[SIZE-1];
+        pad = pad_mux.out[0];
+        
+        shifter.a = shifted;
+        shifter.shift = b;
+        shifter.pad = pad;
+        rev_shifted = shifter.out;
+        
+        rev_output.in = rev_shifted;
+        final_shift = rev_output.reversed;
+        
+        out_mux.s0 = alufn[0];
+        out_mux.inp1 = rev_shifted;
+        out_mux.inp2 = final_shift;
+        result = out_mux.out;
+        
+    }
+}

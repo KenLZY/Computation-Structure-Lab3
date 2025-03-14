@@ -1,0 +1,48 @@
+module alchitry_top (
+    input clk,              // 100MHz clock
+    input rst_n,            // reset button (active low)
+    output led[8],          // 8 user controllable LEDs
+    input usb_rx,            // USB->Serial input
+    output usb_tx,           // USB->Serial output
+    output io_led[3][8],     // LEDs on IO Shield
+    output io_segment[8],        // 7-segment LEDs on IO Shield
+    output io_select[4],        // Digit select on IO Shield
+    input io_button[5],      // 5 buttons on IO Shield
+    input io_dip[3][8]       // DIP switches on IO Shield
+) {
+    
+    sig rst                 // reset signal
+    
+    .clk(clk) {
+        // The reset conditioner is used to synchronize the reset signal to the FPGA
+        // clock. This ensures the entire FPGA comes out of reset at the same time.
+        reset_conditioner reset_cond
+    }
+    const CLK_FREQ = $is_sim() ? 1000 : 10000000 // put 1000 for sim, 10000000 otherwise in hardware
+    
+    //alu_manual_tester alu_manual(.clk(clk), .rst(rst), .io_button(io_button), .io_dip(io_dip), #CLK_FREQ(CLK_FREQ)) 
+    alu_fsm alu_fsm(.clk(clk), .rst_n(rst), .io_button(io_button), .io_dip(io_dip), #CLK_FREQ(CLK_FREQ))
+    
+    always {
+        reset_cond.in = ~rst_n  // input raw inverted reset signal
+        rst = reset_cond.out    // conditioned reset
+        
+        led = 8h00             // turn LEDs off
+        
+        usb_tx = usb_rx          // loop serial port
+        
+
+        // to test ALU 
+        //io_segment = alu_manual.io_segment
+        //io_select = alu_manual.io_select         
+        //io_led = alu_manual.io_led
+        //led = alu_manual.led
+        
+        // to test fsm
+        io_led = alu_fsm.io_led;
+        led = alu_fsm.led;
+        io_select = alu_fsm.io_select;
+        io_segment = alu_fsm.io_segment;
+ 
+    }
+}

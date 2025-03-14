@@ -1,0 +1,31 @@
+// A ripple-carry-adder combinational logic unit
+module rca #(
+    SIZE ~ 32 : SIZE > 1
+)(
+    input a[SIZE],
+    input b[SIZE],
+    input cin,
+    output cout,
+    output s[SIZE]
+) {
+    
+    fa fa[SIZE]
+    
+    always {
+        // implement ripple-carry-adder logic here
+        fa.a = a
+        fa.b = b
+        fa.cin = 0
+        
+        repeat (i, SIZE){
+            if (i == 0) {
+                fa.cin[0] = cin
+            }
+            else {
+                fa.cin[i] = fa.cout[i-1]
+            }
+        }
+        s = fa.s // connecting the output bits
+        cout = fa.cout[SIZE - 1]
+    }
+}

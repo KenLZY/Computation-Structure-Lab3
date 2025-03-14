@@ -1,0 +1,54 @@
+module alu_manual_tester#(
+    CLK_FREQ ~ 1000 : CLK_FREQ > 0
+) (
+    input clk,  // clock
+    input rst,  // reset
+    input io_button[5],
+    input io_dip[3][8],
+    output io_led[3][8],
+    output io_segment[8],
+    output io_select[4],
+    output led[8]
+) {
+    
+    //alu alu(#SIZE(32))
+    //boolean boolean(#SIZE(8))
+    //shifter shifter(#SIZE(8))
+    //multiplier multiplier(.clk(clk), .rst_n(rst))
+
+    always { // implement alu tester logic here    
+        
+        io_led = 3x{{8h0}}
+        io_segment = 0
+        io_select = 4hF
+        led = 8h0
+        
+        /* Adder Unit & Compare Unit Test */
+        //alu.a = io_dip[0]
+        //alu.b = io_dip[1]
+        //alu.alufn = io_dip[2][5:0]
+        //io_led[1] = alu.alu_output;
+        //led[2:0] = c{alu.z, alu.v, alu.n}
+        
+        /* Boolean Unit Test */
+        //boolean.a = io_dip[0];
+        //boolean.b = io_dip[1];
+        //boolean.alufn = io_dip[2][3:0]
+        //io_led[1] = boolean.bool;
+        
+        /* Shifter Unit Test */
+        //shifter.a = io_dip[0];
+        //shifter.b = io_dip[1][4:0];
+        //shifter.alufn = io_dip[2][1:0];
+        //io_led[1] = shifter.result;
+        
+        /* Multiplier Unit Test */
+        //multiplier.a = io_dip[0][3:0];
+        //multiplier.b = io_dip[1][3:0];
+        //io_led[1] = multiplier.mul;
+        
+        
+        
+ 
+    }
+}

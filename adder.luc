@@ -1,0 +1,37 @@
+module adder #(
+    SIZE ~ 32 : SIZE > 1
+)(
+    input a[SIZE],
+    input b[SIZE],
+    input alufn_signal[6],
+    output out[SIZE],
+    output z,
+    output v,
+    output n
+) {
+    
+    rca rca_unit(#SIZE(SIZE))
+    sig xb[SIZE]
+    sig temp_out[SIZE]
+    
+    always {
+        // implement adder/subtractor unit logic here
+        rca_unit.a = a
+        xb = b ^ ( SIZEx{alufn_signal[0]} ) // XOR gate - to change b based on whether is it sub or add
+        rca_unit.b = xb
+        rca_unit.cin = alufn_signal[0]
+        temp_out = rca_unit.s
+        
+        // Check for overflow
+        v = (a[SIZE-1] & xb[SIZE-1] & ~temp_out[SIZE-1]) | (~a[SIZE-1] & ~xb[SIZE-1] & temp_out[SIZE-1])
+        
+        // Check -ve flag
+        n = temp_out[SIZE-1]
+        
+        // Check if out = 0
+        z = ~|temp_out
+        
+        out = temp_out
+        
+    }
+}

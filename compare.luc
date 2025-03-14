@@ -1,0 +1,45 @@
+module compare #(
+    SIZE ~ 32 // 32 -> 8
+)
+(
+    input a[SIZE],
+    input b[SIZE],
+    //input z,
+    //input v,
+    //input n,
+    input alufn[6],
+    output cmp
+) {
+    
+    sig et
+    sig lt
+    sig lte
+    sig conditions[4]
+    
+    mux_4 muxcompare
+    adder adder (#SIZE(SIZE))
+    
+    always {
+        
+        adder.a = a;
+        adder.b = b;
+        adder.alufn_signal = 1; // Why does it have to be subtraction?
+
+        et = adder.z // A == B
+        lt = adder.n ^ adder.v // A < B
+        lte = adder.z | (adder.n ^ adder.v) // A <= B
+        
+        conditions[0] = 0
+        conditions[1] = et
+        conditions[2] = lt
+        conditions[3] = lte
+        
+        muxcompare.s0 = alufn[1]
+        muxcompare.s1 = alufn[2]
+        muxcompare.in = conditions
+        
+        cmp = muxcompare.out
+        
+        
+    }
+}

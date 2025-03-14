@@ -1,0 +1,25 @@
+module x_bit_left_shifter #(
+    SHIFT ~ 32 : SHIFT > -1 & SHIFT < 32
+)(
+    input a[SHIFT],
+    input shift[5],
+    input pad, // 1 or 0, to pad the empty bits after shifting
+    output out[SHIFT]
+) {
+    
+    sig shifted_bits[SHIFT]; // signal to store the shifted x bits
+    
+    always {
+        
+        shifted_bits = SHIFTx{pad};
+        
+        repeat (i, SHIFT) {
+            if (i + shift < 8) {
+                shifted_bits[i+shift] = a[i];
+            }
+        }
+        
+        out = shifted_bits;
+        
+    }
+}
