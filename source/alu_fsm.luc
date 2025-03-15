@@ -12,6 +12,9 @@ module alu_fsm #(
     output io_segment[8],
     output io_select[4]
 ) {
+    
+    const CLK_FREQ1 = $is_sim() ? 1000 : 100000000
+    
     // FSM States
     enum States {
         INIT,
@@ -26,24 +29,24 @@ module alu_fsm #(
     
     sig rst;
 
-    /* clk block */
     .clk(clk) {
         
         reset_conditioner reset_cond;
         edge_detector io_button_edge[5](#RISE({1, 1, 1, 1, 1}), #FALL({0, 0, 0, 0, 0}))
-        button_conditioner io_button_cond[5](#CLK_FREQ({1000, 1000, 1000, 1000, 1000}))
+        button_conditioner io_button_cond[5](#CLK_FREQ({CLK_FREQ1, CLK_FREQ1, CLK_FREQ1, CLK_FREQ1, CLK_FREQ1}))
         
-        .rst(rst) {
+        .rst(rst_n) {
             dff state[$width(States)](#INIT(States.INIT));
             dff a_reg[32];
             dff b_reg[32];
             dff alufn_reg[6];
+            multi_seven_seg seg (#DIV($is_sim() ? 1 : 16), #DIGITS(4));
         }
         
     }
 
-    // Instantiate 32bit ALU
     alu alu_unit(#SIZE(32));
+    bin_to_dec decimal_renderer(#DIGITS(4), #LEADING_ZEROS(1));
 
     always {
         
@@ -51,7 +54,9 @@ module alu_fsm #(
         alu_unit.b = 0;
         alu_unit.alufn = io_dip[2][5:0];
         
-        // Default LED values
+        decimal_renderer.value = 0;
+        seg.values = decimal_renderer.digits;
+        
         io_led = 3x{{8h0}};
         led = 8h0;
         io_segment = 8h00;
@@ -60,28 +65,33 @@ module alu_fsm #(
         reset_cond.in = ~rst_n;
         rst = reset_cond.out;
 
-        // Button conditioning and edge detection
+        
         io_button_cond.in = io_button;
         io_button_edge.in = io_button_cond.out;
         
         state.d = state.q;
         a_reg.d = a_reg.q;
         b_reg.d = b_reg.q;
+        
+        io_led[0] = io_dip[0];
+        io_led[1] = io_dip[1];
+        io_led[2] = io_dip[2];
 
-        /* --------------- Description of what each state does --------------- */
         
         case (state.q) {
             
             
             States.INIT:
-            led[7] = 1b1
+            decimal_renderer.value = 1;
+            seg.values = decimal_renderer.digits;
             if (io_button_edge.out[1]) {
             state.d = States.A_LOWER;
             }
             
             
-            States.A_LOWER: /* store lower 16 bits of a */
-            led[6] = 1b1;
+            States.A_LOWER:
+            decimal_renderer.value = 2;
+            seg.values = decimal_renderer.digits;
             if (io_button_edge.out[1]) {
             a_reg.d[7:0] = io_dip[0];
             a_reg.d[15:8] = io_dip[1];
@@ -89,8 +99,9 @@ module alu_fsm #(
             }
            
             
-            States.A_UPPER: /* store upper 16bits of a */
-            led[5] = 1b1;
+            States.A_UPPER:
+            decimal_renderer.value = 3;
+            seg.values = decimal_renderer.digits;
             if (io_button_edge.out[1]) {
             a_reg.d[23:16] = io_dip[0];
             a_reg.d[31:24] = io_dip[1];
@@ -98,8 +109,9 @@ module alu_fsm #(
             }
             
             
-            States.B_LOWER: /* store lower 16bits of b */
-            led[4] = 1b1;
+            States.B_LOWER:
+            decimal_renderer.value = 4;
+            seg.values = decimal_renderer.digits;
             if (io_button_edge.out[1]) {
             b_reg.d[7:0] = io_dip[0];
             b_reg.d[15:8] = io_dip[1];
@@ -107,8 +119,9 @@ module alu_fsm #(
             }
             
             
-            States.B_UPPER: /* store upper 16bits of b */
-            led[3] = 1b1;
+            States.B_UPPER:
+            decimal_renderer.value = 5;
+            seg.values = decimal_renderer.digits;
             if (io_button_edge.out[1]) {
             b_reg.d[23:16] = io_dip[0];
             b_reg.d[31:24] = io_dip[1];
@@ -116,16 +129,18 @@ module alu_fsm #(
             }
             
             
-            States.ALUFN_SELECT: /* select which operation to perform */
-            led[2] = 1b1;
+            States.ALUFN_SELECT:
+            decimal_renderer.value = 6;
+            seg.values = decimal_renderer.digits;
             if (io_button_edge.out[1]) {
             alufn_reg.d = io_dip[2][5:0];
             state.d = States.DISPLAY_UPPER;
             }
             
             
-            States.DISPLAY_UPPER: /* display upper 16bits of output */
-            led[1] = 1b1;
+            States.DISPLAY_UPPER:
+            decimal_renderer.value = 7;
+            seg.values = decimal_renderer.digits;
             alu_unit.a = a_reg.q;
             alu_unit.b = b_reg.q;
             alu_unit.alufn = alufn_reg.q;
@@ -136,8 +151,9 @@ module alu_fsm #(
             }
             
             
-            States.DISPLAY_LOWER: /* display lower 16bits of output */
-            led[0] = 1b1;
+            States.DISPLAY_LOWER:
+            decimal_renderer.value = 8;
+            seg.values = decimal_renderer.digits;
             alu_unit.a = a_reg.q;
             alu_unit.b = b_reg.q;
             alu_unit.alufn = alufn_reg.q;
@@ -148,7 +164,8 @@ module alu_fsm #(
             state.d = States.INIT;
             }
             
-            
         }
+        io_segment = ~seg.seg
+        io_select = ~seg.sel
     }
 }

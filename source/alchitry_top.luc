@@ -18,9 +18,8 @@ module alchitry_top (
         // clock. This ensures the entire FPGA comes out of reset at the same time.
         reset_conditioner reset_cond
     }
-    const CLK_FREQ = $is_sim() ? 1000 : 10000000 // put 1000 for sim, 10000000 otherwise in hardware
+    const CLK_FREQ = $is_sim() ? 1000 : 100000000 // put 1000 for sim, 10000000 otherwise in hardware
     
-    //alu_manual_tester alu_manual(.clk(clk), .rst(rst), .io_button(io_button), .io_dip(io_dip), #CLK_FREQ(CLK_FREQ)) 
     alu_fsm alu_fsm(.clk(clk), .rst_n(rst), .io_button(io_button), .io_dip(io_dip), #CLK_FREQ(CLK_FREQ))
     
     always {
@@ -32,17 +31,12 @@ module alchitry_top (
         usb_tx = usb_rx          // loop serial port
         
 
-        // to test ALU 
-        //io_segment = alu_manual.io_segment
-        //io_select = alu_manual.io_select         
-        //io_led = alu_manual.io_led
-        //led = alu_manual.led
-        
-        // to test fsm
-        io_led = alu_fsm.io_led;
-        led = alu_fsm.led;
-        io_select = alu_fsm.io_select;
-        io_segment = alu_fsm.io_segment;
+        // to test ALU
+        io_segment = alu_fsm.io_segment
+        io_select = alu_fsm.io_select         
+        io_led = alu_fsm.io_led
+        led = alu_fsm.led
+
  
     }
 }

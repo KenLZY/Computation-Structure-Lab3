@@ -1,5 +1,5 @@
 module alu #(
-    SIZE ~ 32 : SIZE > 1
+    SIZE = 32 : SIZE > 1
 )
 (
     input a[SIZE],
@@ -15,7 +15,7 @@ module alu #(
     compare compare(#SIZE(SIZE))
     //multiplier multiplier
     boolean boolean(#SIZE(SIZE))
-    shifter shifter(#SIZE(SIZE))
+    shifter shifter(#SIZE(32))
     
     always {
         
@@ -35,10 +35,13 @@ module alu #(
         compare.a = 0;
         compare.b = 0;
         compare.alufn = 0;
+        //multiplier.a = 0;
+        //multiplier.b = 0;
             
         case(alufn) {
             
-            b000000: /* Addition */
+            /* Addition */
+            b000000:
             adder.a = a;
             adder.b = b;
             
@@ -50,7 +53,8 @@ module alu #(
             
             alu_output = adder.out;
             
-            b000001: /* Subtraction */
+            /* Subtraction */
+            b000001:
             adder.a = a;
             adder.b = b;
             
@@ -61,64 +65,78 @@ module alu #(
             n = adder.n;
             
             alu_output = adder.out;
+           
             
-            //b0000010: /* Multiplication */
+            /*b0000010: 
+            multiplier.a = a;
+            multiplier.b = b;
+            alu_output = multiplier.mul;*/
             
-            b011000: /* Boolean - AND */
+            /* AND */
+            b011000:
             boolean.a = a;
             boolean.b = b;
             boolean.alufn = b001000;
             alu_output = boolean.bool;
             
-            b011110: /* Boolean - OR */
+            /* OR */
+            b011110: 
             boolean.a = a;
             boolean.b = b;
             boolean.alufn = b001110;
             alu_output = boolean.bool;
             
-            b010110: /* Boolean - XOR */
+            /* XOR */
+            b010110:
             boolean.a = a;
             boolean.b = b;
             boolean.alufn = b000110;
             alu_output = boolean.bool;
             
-            b011010: /* Boolean - BUFFER */
+            /* BUFFER A */
+            b011010:
             boolean.a = a;
             boolean.b = b;
             boolean.alufn = b001010;
             alu_output = boolean.bool;
             
-            b100000: /* Shifter - Shift Left */
+            /* SHIFT LEFT */
+            b100000: 
             shifter.a = a;
             shifter.b = b[4:0];
             shifter.alufn = b000000;
             alu_output = shifter.result;
             
-            b100001: /* Shifter - Shift Right */
+            /* SHIFT RIGHT */
+            b100001:
             shifter.a = a;
             shifter.b = b[4:0];
             shifter.alufn = b000001;
             alu_output = shifter.result;
             
-            b100011: /* Shifter - Shift Right Arithmetic */
+            /* SHIFT RIGHT ARITHMETIC */
+            b100011:
             shifter.a = a;
             shifter.b = b[4:0];
             shifter.alufn = b000011;
             alu_output = shifter.result;
             
-            b110011: /* Compare - Equal */
+            /* EQUAL TO */
+            b110011:
             compare.a = a;
             compare.b = b;
             compare.alufn = b000010;
             alu_output = compare.cmp;
             
-            b110101: /* Compare - Less Than */
+            /* LESS THAN  */
+            b110101:
             compare.a = a;
             compare.b = b;
             compare.alufn = b000100
             alu_output = compare.cmp;
             
-            b110111: /* Compare - Less than or Equal to */
+            /* LESS THAN EQUAL TO */
+            b110111:
             compare.a = a;
             compare.b = b;
             compare.alufn = b000110;

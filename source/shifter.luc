@@ -4,8 +4,8 @@ module shifter #(
     
 )(
     input a[SIZE],
-    input b[5], /* determines how much to shift by */
-    input alufn[6], /* determines which type of shift to execute */
+    input b[5],
+    input alufn[6],
     output result[SIZE]
 ) {
     

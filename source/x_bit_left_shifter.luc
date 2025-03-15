@@ -14,7 +14,7 @@ module x_bit_left_shifter #(
         shifted_bits = SHIFTx{pad};
         
         repeat (i, SHIFT) {
-            if (i + shift < 8) {
+            if (i + shift < SHIFT) {
                 shifted_bits[i+shift] = a[i];
             }
         }

@@ -34,8 +34,8 @@ module compare #(
         conditions[2] = lt
         conditions[3] = lte
         
-        muxcompare.s0 = alufn[1]
-        muxcompare.s1 = alufn[2]
+        muxcompare.s0 = alufn[0]
+        muxcompare.s1 = alufn[1]
         muxcompare.in = conditions
         
         cmp = muxcompare.out
