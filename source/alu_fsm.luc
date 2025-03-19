@@ -12,8 +12,8 @@ module alu_fsm #(
     output io_segment[8],
     output io_select[4]
 ) {
-    
-    const CLK_FREQ1 = $is_sim() ? 1000 : 100000000
+    sig slow_clock
+    const CLK_FREQ1 = $is_sim() ? 1000 : 10000000
     
     // FSM States
     enum States {
@@ -24,148 +24,233 @@ module alu_fsm #(
         B_UPPER,
         ALUFN_SELECT,
         DISPLAY_UPPER,
-        DISPLAY_LOWER
+        DISPLAY_LOWER,
+        AUTO_TEST,
+        AUTO_NEXT,
+        TEST_FAIL,
+        TEST_PASS
     }
     
-    sig rst;
-
+    sig rst
+    sig temp_out[32]
+    
     .clk(clk) {
         
-        reset_conditioner reset_cond;
+        reset_conditioner reset_cond
+        edge_detector slow_clock_edge(#RISE(1), #FALL(0))
+        
         edge_detector io_button_edge[5](#RISE({1, 1, 1, 1, 1}), #FALL({0, 0, 0, 0, 0}))
         button_conditioner io_button_cond[5](#CLK_FREQ({CLK_FREQ1, CLK_FREQ1, CLK_FREQ1, CLK_FREQ1, CLK_FREQ1}))
         
         .rst(rst_n) {
-            dff state[$width(States)](#INIT(States.INIT));
-            dff a_reg[32];
-            dff b_reg[32];
-            dff alufn_reg[6];
-            multi_seven_seg seg (#DIV($is_sim() ? 1 : 16), #DIGITS(4));
+            dff state[$width(States)](#INIT(States.INIT))
+            dff a_reg[32]
+            dff b_reg[32]
+            dff alufn_reg[6]
+            dff addr_reg[6](#INIT(6b100101)) // Initial - 1st Case
+            multi_seven_seg seg (#DIV($is_sim() ? 1 : 16), #DIGITS(4))
         }
         
     }
-
-    alu alu_unit(#SIZE(32));
-    bin_to_dec decimal_renderer(#DIGITS(4), #LEADING_ZEROS(1));
-
+    
+    alu alu_unit(#SIZE(32))
+    bin_to_dec decimal_renderer(#DIGITS(4), #LEADING_ZEROS(1))
+    counter slowclock(#SIZE(1), #DIV($is_sim() ? 10 : 26), .clk(clk), .rst(rst_n))
+    automatic_rom rom (.address(addr_reg.q))
+    
     always {
         
-        alu_unit.a = 0;
-        alu_unit.b = 0;
-        alu_unit.alufn = io_dip[2][5:0];
+        temp_out = 0
+        alu_unit.a = 0
+        alu_unit.b = 0
+        alu_unit.alufn = io_dip[2][5:0]
         
-        decimal_renderer.value = 0;
-        seg.values = decimal_renderer.digits;
+        decimal_renderer.value = 0
+        seg.values = decimal_renderer.digits
         
-        io_led = 3x{{8h0}};
-        led = 8h0;
-        io_segment = 8h00;
-        io_select = 4hF;
+        io_led = 3x{{8h0}}
+        led = 8h0
+        io_segment = 8h00
+        io_select = 4hF
         
-        reset_cond.in = ~rst_n;
-        rst = reset_cond.out;
-
+        reset_cond.in = ~rst_n
+        rst = reset_cond.out
         
-        io_button_cond.in = io_button;
-        io_button_edge.in = io_button_cond.out;
         
-        state.d = state.q;
-        a_reg.d = a_reg.q;
-        b_reg.d = b_reg.q;
+        io_button_cond.in = io_button
+        io_button_edge.in = io_button_cond.out
         
-        io_led[0] = io_dip[0];
-        io_led[1] = io_dip[1];
-        io_led[2] = io_dip[2];
-
+        state.d = state.q
+        a_reg.d = a_reg.q
+        b_reg.d = b_reg.q
+        
+        io_led[0] = io_dip[0]
+        io_led[1] = io_dip[1]
+        io_led[2] = io_dip[2]
+        
+        addr_reg.d = addr_reg.q
+        
+        slow_clock = slowclock.value
+        slow_clock_edge.in = slow_clock
         
         case (state.q) {
             
             
             States.INIT:
-            decimal_renderer.value = 1;
-            seg.values = decimal_renderer.digits;
-            if (io_button_edge.out[1]) {
-            state.d = States.A_LOWER;
-            }
+                decimal_renderer.value = 15
+                seg.values = decimal_renderer.digits
+                if (io_button_edge.out[1]) {
+                    state.d = States.A_LOWER
+                }
+                else if (io_button_edge.out[0]) {
+                    state.d = States.AUTO_TEST
+                }
             
             
             States.A_LOWER:
-            decimal_renderer.value = 2;
-            seg.values = decimal_renderer.digits;
-            if (io_button_edge.out[1]) {
-            a_reg.d[7:0] = io_dip[0];
-            a_reg.d[15:8] = io_dip[1];
-            state.d = States.A_UPPER;
-            }
-           
+                decimal_renderer.value = 2
+                seg.values = decimal_renderer.digits
+                if (io_button_edge.out[1]) {
+                    a_reg.d[7:0] = io_dip[0]
+                    a_reg.d[15:8] = io_dip[1]
+                    state.d = States.A_UPPER
+                }
+            
             
             States.A_UPPER:
-            decimal_renderer.value = 3;
-            seg.values = decimal_renderer.digits;
-            if (io_button_edge.out[1]) {
-            a_reg.d[23:16] = io_dip[0];
-            a_reg.d[31:24] = io_dip[1];
-            state.d = States.B_LOWER;
-            }
+                decimal_renderer.value = 3
+                seg.values = decimal_renderer.digits
+                if (io_button_edge.out[1]) {
+                    a_reg.d[23:16] = io_dip[0]
+                    a_reg.d[31:24] = io_dip[1]
+                    state.d = States.B_LOWER
+                }
             
             
             States.B_LOWER:
-            decimal_renderer.value = 4;
-            seg.values = decimal_renderer.digits;
-            if (io_button_edge.out[1]) {
-            b_reg.d[7:0] = io_dip[0];
-            b_reg.d[15:8] = io_dip[1];
-            state.d = States.B_UPPER;
-            }
+                decimal_renderer.value = 4
+                seg.values = decimal_renderer.digits
+                if (io_button_edge.out[1]) {
+                    b_reg.d[7:0] = io_dip[0]
+                    b_reg.d[15:8] = io_dip[1]
+                    state.d = States.B_UPPER
+                }
             
             
             States.B_UPPER:
-            decimal_renderer.value = 5;
-            seg.values = decimal_renderer.digits;
-            if (io_button_edge.out[1]) {
-            b_reg.d[23:16] = io_dip[0];
-            b_reg.d[31:24] = io_dip[1];
-            state.d = States.ALUFN_SELECT;
-            }
+                decimal_renderer.value = 5
+                seg.values = decimal_renderer.digits
+                if (io_button_edge.out[1]) {
+                    b_reg.d[23:16] = io_dip[0]
+                    b_reg.d[31:24] = io_dip[1]
+                    state.d = States.ALUFN_SELECT
+                }
             
             
             States.ALUFN_SELECT:
-            decimal_renderer.value = 6;
-            seg.values = decimal_renderer.digits;
-            if (io_button_edge.out[1]) {
-            alufn_reg.d = io_dip[2][5:0];
-            state.d = States.DISPLAY_UPPER;
-            }
+                decimal_renderer.value = 6
+                seg.values = decimal_renderer.digits
+                if (io_button_edge.out[1]) {
+                    alufn_reg.d = io_dip[2][5:0]
+                    state.d = States.DISPLAY_UPPER
+                }
             
             
             States.DISPLAY_UPPER:
-            decimal_renderer.value = 7;
-            seg.values = decimal_renderer.digits;
-            alu_unit.a = a_reg.q;
-            alu_unit.b = b_reg.q;
-            alu_unit.alufn = alufn_reg.q;
-            io_led[1] = alu_unit.alu_output[31:24];
-            io_led[0] = alu_unit.alu_output[23:16];
-            if (io_button_edge.out[1]) {
-            state.d = States.DISPLAY_LOWER;
-            }
+                decimal_renderer.value = 7
+                seg.values = decimal_renderer.digits
+                alu_unit.a = a_reg.q
+                alu_unit.b = b_reg.q
+                alu_unit.alufn = alufn_reg.q
+                io_led[1] = alu_unit.alu_output[31:24]
+                io_led[0] = alu_unit.alu_output[23:16]
+                led[7:5] = c{alu_unit.z, alu_unit.v, alu_unit.n}
+                if (io_button_edge.out[1]) {
+                    state.d = States.DISPLAY_LOWER
+                }
             
             
             States.DISPLAY_LOWER:
-            decimal_renderer.value = 8;
-            seg.values = decimal_renderer.digits;
-            alu_unit.a = a_reg.q;
-            alu_unit.b = b_reg.q;
-            alu_unit.alufn = alufn_reg.q;
-            io_led[1] = alu_unit.alu_output[15:8];
-            io_led[0] = alu_unit.alu_output[7:0];
-            led[7:5] = c{alu_unit.z, alu_unit.v, alu_unit.n};
-            if (io_button_edge.out[1]){
-            state.d = States.INIT;
-            }
+                decimal_renderer.value = 8
+                seg.values = decimal_renderer.digits
+                alu_unit.a = a_reg.q
+                alu_unit.b = b_reg.q
+                alu_unit.alufn = alufn_reg.q
+                io_led[1] = alu_unit.alu_output[15:8]
+                io_led[0] = alu_unit.alu_output[7:0]
+                led[7:5] = c{alu_unit.z, alu_unit.v, alu_unit.n}
+                if (io_button_edge.out[1]){
+                    state.d = States.INIT
+                }
+            
+            States.AUTO_TEST:
+                decimal_renderer.value = addr_reg.q
+                seg.values = decimal_renderer.digits
+                
+                alu_unit.a = rom.a
+                alu_unit.b = rom.b
+                alu_unit.alufn = rom.alufn[5:0]
+                temp_out = alu_unit.alu_output
+                
+                if (io_dip[1][7]) {
+                    temp_out[0] = ~temp_out[0]
+                }
+                
+                led[0] = slow_clock
+                if (slow_clock_edge.out) {
+                    if ((temp_out == rom.expected_output) &&
+                        (alu_unit.z == rom.z && alu_unit.v == rom.v && alu_unit.n == rom.n)) {
+                        state.d = States.AUTO_NEXT
+                    }
+                    else {
+                        state.d = States.TEST_FAIL
+                    }
+                }
+                
+                else if (io_button_edge.out[0]) {
+                    state.d = States.INIT
+                }
+            
+            States.AUTO_NEXT:
+                io_led[2] = 8hFF
+                decimal_renderer.value = addr_reg.q
+                seg.values = decimal_renderer.digits
+                if (slow_clock_edge.out){
+                    if (addr_reg.q > 6b000000) {
+                        addr_reg.d = addr_reg.q - 1
+                        state.d = States.AUTO_TEST
+                    } else {
+                        state.d = States.TEST_PASS
+                    }
+                }
+                else if (io_button_edge.out[0]) {
+                    state.d = States.INIT
+                }
+            
+            States.TEST_PASS:
+                decimal_renderer.value = 11
+                seg.values = decimal_renderer.digits
+                io_led[0] = 8hAA
+                io_led[1] = 8h55
+                io_led[2] = 8hAA
+                if (io_button_edge.out[0]) {
+                    state.d = States.INIT
+                    addr_reg.d = 6b100101
+                }
+            
+            States.TEST_FAIL:
+                decimal_renderer.value = addr_reg.q
+                seg.values = decimal_renderer.digits
+                io_led[1] = 8hFF
+                io_led[0] = addr_reg.q
+                if (io_button_edge.out[0]) {
+                    //addr_reg.d = 6b100101
+                    state.d = States.INIT
+                } 
             
         }
         io_segment = ~seg.seg
         io_select = ~seg.sel
+        led[7:5] = c{alu_unit.z, alu_unit.v, alu_unit.n}
     }
 }

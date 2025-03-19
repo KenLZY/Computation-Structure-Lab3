@@ -1,0 +1,35 @@
+module mux_3 #(
+    
+    SIZE ~ 32 : SIZE > -1 & SIZE < 32
+)
+(
+    input s0,
+    input s1,
+    input inp1[SIZE],
+    input inp2[SIZE],
+    input inp3[SIZE],
+    output out[SIZE]
+) {
+    always {
+        
+        case (c{s1, s0}) {
+            
+            b00:
+                out = inp1
+            
+            b01:
+                out = inp1
+            
+            b10:
+                out = inp2
+            
+            b11:
+                out = inp3
+            
+            default:
+                out = 0
+            
+        }
+        
+    }
+}

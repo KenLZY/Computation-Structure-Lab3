@@ -16,6 +16,7 @@
     //multiplier multiplier
     //adder adder(#SIZE(8))
     //compare compare(#SIZE(8))
+    divider divider(#SIZE(8))
 
     always { // implement alu tester logic here    
         
@@ -24,38 +25,42 @@
         io_select = 4hF
         led = 8h0
         
-        Adder Unit
+        
         //adder.a = io_dip[0]
         //adder.b = io_dip[1]
         //adder.alufn_signal = io_dip[2][1:0]
         //io_led[1] = adder.out;
         //led[2:0] = c{adder.z, adder.v, adder.n}
         
-        Compare Unit
+        
         //compare.a = io_dip[0];
         //compare.b = io_dip[1];
         //compare.alufn = io_dip[2][1:0]
         //io_led[1] = compare.cmp;
         
-        Boolean Unit Test
+        
         //boolean.a = io_dip[0];
         //boolean.b = io_dip[1];
         //boolean.alufn = io_dip[2][3:0]
         //io_led[1] = boolean.bool;
         
-        Shifter Unit Test
+        
         //shifter.a = io_dip[0];
         //shifter.b = io_dip[1][4:0];
         //shifter.alufn = io_dip[2][1:0];
         //io_led[1] = shifter.result;
         
-        Multiplier Unit Test
+        
         //multiplier.a = io_dip[0];
         //multiplier.b = io_dip[1];
         //io_led[1] = multiplier.mul;
+        
+        divider.a = io_dip[0]
+        divider.b = io_dip[1]
+        io_led[1] = divider.quotient
         
         
         
  
     }
-} */
+}*/

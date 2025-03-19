@@ -18,7 +18,7 @@ module alchitry_top (
         // clock. This ensures the entire FPGA comes out of reset at the same time.
         reset_conditioner reset_cond
     }
-    const CLK_FREQ = $is_sim() ? 1000 : 100000000 // put 1000 for sim, 10000000 otherwise in hardware
+    const CLK_FREQ = $is_sim() ? 1000 : 10000000 // put 1000 for sim, 10000000 otherwise in hardware
     
     alu_fsm alu_fsm(.clk(clk), .rst_n(rst), .io_button(io_button), .io_dip(io_dip), #CLK_FREQ(CLK_FREQ))
     

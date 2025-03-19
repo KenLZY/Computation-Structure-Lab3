@@ -1,0 +1,80 @@
+module automatic_rom #(
+    ENTRIES = 38,
+    SIZE = 32
+)(
+    input address[$clog2(ENTRIES)], // Ceiling 6bits because 38 test cases
+    output a[SIZE],
+    output b[SIZE],
+    output alufn[6],
+    output expected_output[SIZE],
+    output z,
+    output v,
+    output n
+) {
+    
+    const DATA = {
+        /* Format: a, b, alufn, expected answer, z, v, n */
+        // Addition - A + 0 = A
+        /*37*/{32h00000001, 32h00000000, 32h00000000, 32h00000001, 32b0, 32b0, 32b0},
+        /*36*/{32h00000000, 32h00000001, 32h00000000, 32h00000001, 32b0, 32b0, 32b0}, // Addition - 0 + A = A
+        /*35*/{32h00000005, 32h00000003, 32h00000000, 32h00000008, 32b0, 32b0, 32b0}, // Addition - Adding two +ve numbers
+        /*34*/{32h7FFFFFFF, 32h00000001, 32h00000000, 32h80000000, 32b0, 32b1, 32b1}, // Addition - Max +ve number with 1 (OVERFLOW)
+        /*33*/{32h00000003, 32h00000000, 32h00000001, 32h00000003, 32b0, 32b0, 32b0}, // Subtraction - A - 0
+        /*32*/{32h00000000, 32h00000001, 32h00000001, 32hFFFFFFFF, 32b0, 32b0, 32b1}, // Subtraction - 0 - A
+        /*31*/{32h00000002, 32hFFFFF110, 32h00000001, 32h00000EF2, 32b0, 32b0, 32b0}, // Subtraction - Big B - Small A (UNDERFLOW)
+        /*30*/{32h00000000, 32h7FFFFFFF, 32h00000001, 32h80000001, 32b0, 32b0, 32b1}, // Subtraction - 0 - MAX +ve
+        
+        /*29*/{32h00000005, 32h00000000, 32h00000002, 32h00000000, 32b0, 32b0, 32b0}, // Multiplication - A x 0 = 0
+        /*28*/{32h00000000, 32h00000005, 32h00000002, 32h00000000, 32b0, 32b0, 32b0}, // Multiplication - 0 x B = 0
+        /*27*/{32h00000005, 32h00000001, 32h00000002, 32h00000005, 32b0, 32b0, 32b0}, // Multiplication - A x 1 = A
+        /*26*/{32h00000005, 32h00000005, 32h00000002, 32h00000019, 32b0, 32b0, 32b0}, // Multiplication - A x B = C
+        
+        /*25*/{32h10101010, 32h00000000, 32h00000018, 32h00000000, 32b0, 32b0, 32b0}, // AND Gate -> A & 0 = 0
+        /*24*/{32h10101010, 32hFFFFFFFF, 32h00000018, 32h10101010, 32b0, 32b0, 32b0}, // AND Gate -> A & 0xFFFF = A
+        /*23*/{32h10101010, 32h10101010, 32h00000018, 32h10101010, 32b0, 32b0, 32b0}, // AND Gate -> A & A = A
+        /*22*/{32h10101010, 32h01010101, 32h00000018, 32h00000000, 32b0, 32b0, 32b0}, // AND Gate -> A & ~A = 0
+        
+        /*21*/{32h10101010, 32h00000000, 32h0000001E, 32h10101010, 32b0, 32b0, 32b0}, // OR Gate -> A | 0 = A
+        /*20*/{32h10101010, 32hFFFFFFFF, 32h0000001E, 32hFFFFFFFF, 32b0, 32b0, 32b0}, // OR Gate -> A | 0xFFFF = 0xFFFF
+        /*19*/{32h10101010, 32h10101010, 32h0000001E, 32h10101010, 32b0, 32b0, 32b0}, // OR Gate -> A | A = A
+       
+         /*18*/{32h10101010, 32h00000000, 32h00000016, 32h10101010, 32b0, 32b0, 32b0}, // XOR Gate -> A ^ 0 = A
+        /*17*/{32h10101010, 32h10101010, 32h00000016, 32h00000000, 32b0, 32b0, 32b0}, // XOR Gate -> A ^ A = 0
+        /*16*/{32hF0F0F0F0, 32h0F0F0F0F, 32h00000016, 32hFFFFFFFF, 32b0, 32b0, 32b1}, // XOR Gate -> A ^ ~A = 0xFFFF
+        
+        /*15*/{32h11110000, 32h00000000, 32h0000001A, 32h11110000, 32b0, 32b0, 32b0}, // BUFFER -> 11110000 = 11110000
+        
+        /*14*/{32h00000001, 32h00000000, 32h00000020, 32h00000001, 32b0, 32b0, 32b0}, // SHL - Zero Shift
+        /*13*/{32h00000001, 32h0000001F, 32h00000020, 32h80000000, 32b0, 32b0, 32b0}, // SHL - maximum bit 
+        /*12*/{32h80000000, 32h00000001, 32h00000020, 32h00000000, 32b0, 32b0, 32b1}, // SHL - Boundary Case
+        
+        /*11*/{32h10000000, 32h00000000, 32h00000021, 32h10000000, 32b0, 32b0, 32b0}, // SHR - Zero Shift
+        /*10*/{32h80000000, 32h0000001F, 32h00000021, 32h00000001, 32b0, 32b1, 32b0}, // SHR - maximum bit
+        /*9*/{32h00000001, 32h00000001, 32h00000021, 32h00000000, 32b1, 32b0, 32b0}, // SHR - Boundary Case
+        
+        /*8*/{32hF0000000, 32h00000002, 32h00000023, 32hFC000000, 32b0, 32b0, 32b1}, // Arithmetic RS
+        
+        /*7*/{32h11110000, 32h11110000, 32h00000033, 32h00000001, 32b1, 32b0, 32b0}, // Compare Equal - True Case
+        /*6*/{32h11110000, 32h10101010, 32h00000033, 32h00000000, 32b0, 32b0, 32b0}, // Compare Equal - False Case
+        
+        /*5*/{32h00000004, 32h00000008, 32h00000035, 32h00000001, 32b0, 32b0, 32b1}, // Compare Less Than - True Case
+        /*4*/{32h00000008, 32h00000004, 32h00000035, 32h00000000, 32b0, 32b0, 32b0}, // Compare Less Than -> A > B - False
+        /*3*/{32h00000008, 32h00000008, 32h00000035, 32h00000000, 32b1, 32b0, 32b0}, // Compare Less Than -> A = B - False
+        
+        /*2*/{32h00000004, 32h00000008, 32h00000037, 32h00000001, 32b0, 32b0, 32b1}, // Compare Less than, Equal -> A < B - True
+        /*1*/{32h00000008, 32h00000008, 32h00000037, 32h00000001, 32b1, 32b0, 32b0}, // Compare Less than, Equal -> A = B - True
+        /*0*/{32h00000008, 32h00000004, 32h00000037, 32h00000000, 32b0, 32b0, 32b0} // Compare Less than, Equal -> A > B - False
+    }
+    
+    always {
+        
+        a = DATA[address][6]
+        b = DATA[address][5]
+        alufn = DATA[address][4][5:0]
+        expected_output = DATA[address][3]
+        z = DATA[address][2][0]
+        v = DATA[address][1][0]
+        n = DATA[address][0][0]
+        
+    }
+}

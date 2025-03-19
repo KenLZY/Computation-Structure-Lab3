@@ -1,0 +1,12 @@
+module divider #(
+    SIZE ~ 32 : SIZE > 0
+)(
+    input a[SIZE],  
+    input b[SIZE],   
+    output quotient[SIZE] // quotient output (16-bit)
+) {
+    
+    always {
+        quotient = a / b
+    }
+}

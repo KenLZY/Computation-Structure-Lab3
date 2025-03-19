@@ -13,135 +13,59 @@ module alu #(
     
     adder adder(#SIZE(SIZE))
     compare compare(#SIZE(SIZE))
-    //multiplier multiplier
+    multiplier multiplier
+    divider divider(#SIZE(SIZE))
     boolean boolean(#SIZE(SIZE))
     shifter shifter(#SIZE(32))
+    mux_3 small_mux(#SIZE(32))
+    mux_4_32 big_mux
+    sig conditions[4][32]
     
     always {
         
-        adder.a = 0;
-        adder.b = 0;
-        adder.alufn_signal = 0;
-        z = 0;
-        v = 0;
-        n = 0;
-        alu_output = 0;
-        boolean.a = 0;
-        boolean.b = 0;
-        boolean.alufn = 0;
-        shifter.a = 0;
-        shifter.b = 0;
-        shifter.alufn = 0;
-        compare.a = 0;
-        compare.b = 0;
-        compare.alufn = 0;
-        //multiplier.a = 0;
-        //multiplier.b = 0;
-            
-        case(alufn) {
-            
-            /* Addition */
-            b000000:
-            adder.a = a;
-            adder.b = b;
-            
-            adder.alufn_signal = 0;
-            
-            z = adder.z;
-            v = adder.v;
-            n = adder.n;
-            
-            alu_output = adder.out;
-            
-            /* Subtraction */
-            b000001:
-            adder.a = a;
-            adder.b = b;
-            
-            adder.alufn_signal = 1;
-            
-            z = adder.z;
-            v = adder.v;
-            n = adder.n;
-            
-            alu_output = adder.out;
-           
-            
-            /*b0000010: 
-            multiplier.a = a;
-            multiplier.b = b;
-            alu_output = multiplier.mul;*/
-            
-            /* AND */
-            b011000:
-            boolean.a = a;
-            boolean.b = b;
-            boolean.alufn = b001000;
-            alu_output = boolean.bool;
-            
-            /* OR */
-            b011110: 
-            boolean.a = a;
-            boolean.b = b;
-            boolean.alufn = b001110;
-            alu_output = boolean.bool;
-            
-            /* XOR */
-            b010110:
-            boolean.a = a;
-            boolean.b = b;
-            boolean.alufn = b000110;
-            alu_output = boolean.bool;
-            
-            /* BUFFER A */
-            b011010:
-            boolean.a = a;
-            boolean.b = b;
-            boolean.alufn = b001010;
-            alu_output = boolean.bool;
-            
-            /* SHIFT LEFT */
-            b100000: 
-            shifter.a = a;
-            shifter.b = b[4:0];
-            shifter.alufn = b000000;
-            alu_output = shifter.result;
-            
-            /* SHIFT RIGHT */
-            b100001:
-            shifter.a = a;
-            shifter.b = b[4:0];
-            shifter.alufn = b000001;
-            alu_output = shifter.result;
-            
-            /* SHIFT RIGHT ARITHMETIC */
-            b100011:
-            shifter.a = a;
-            shifter.b = b[4:0];
-            shifter.alufn = b000011;
-            alu_output = shifter.result;
-            
-            /* EQUAL TO */
-            b110011:
-            compare.a = a;
-            compare.b = b;
-            compare.alufn = b000010;
-            alu_output = compare.cmp;
-            
-            /* LESS THAN  */
-            b110101:
-            compare.a = a;
-            compare.b = b;
-            compare.alufn = b000100
-            alu_output = compare.cmp;
-            
-            /* LESS THAN EQUAL TO */
-            b110111:
-            compare.a = a;
-            compare.b = b;
-            compare.alufn = b000110;
-            alu_output = compare.cmp;
-        }
+        adder.a = a
+        adder.b = b
+        adder.alufn_signal = alufn[0]
+        z = adder.z
+        v = adder.v
+        n = adder.n
+        boolean.a = a
+        boolean.b = b
+        boolean.alufn = alufn[3:0]
+        shifter.a = a
+        shifter.b = b[4:0]
+        shifter.alufn = alufn[1:0]
+        compare.a = a
+        compare.b = b
+        compare.alufn = alufn[2:1]
+        multiplier.a = a
+        multiplier.b = b
+        divider.a = a
+        divider.b = b
+        
+        /* Small Mux */
+        small_mux.s0 = alufn[0]
+        small_mux.s1 = alufn[1]
+        small_mux.inp1 = adder.out
+        small_mux.inp2 = multiplier.mul
+        small_mux.inp3 = divider.quotient
+        
+        /* Inputs for Big Mux */
+        conditions[0] = small_mux.out
+        conditions[1] = boolean.bool
+        conditions[2] = shifter.result
+        conditions[3] = c{31b0, compare.cmp}
+        
+        /* Big Mux */
+        big_mux.s0 = alufn[4]
+        big_mux.s1 = alufn[5]
+        big_mux.in = conditions
+        
+        alu_output = big_mux.out
+        
+        
+        
+        
         
     }
 }
